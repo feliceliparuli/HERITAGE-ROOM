@@ -33,10 +33,12 @@ public class DataLoader {
                 Customer c1 = new Customer();
                 c1.setName("Mario Rossi");
                 c1.setEmail("mario@rossi.com");
+                c1.setPhone("3331234567");
 
                 Customer c2 = new Customer();
                 c2.setName("Giulia Bianchi");
                 c2.setEmail("giulia@bianchi.com");
+                c2.setPhone("3339876543");
 
                 customerRepository.save(c1);
                 customerRepository.save(c2);

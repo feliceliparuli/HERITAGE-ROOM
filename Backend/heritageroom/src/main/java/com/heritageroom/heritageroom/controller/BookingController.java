@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class BookingController {
 
     private final BookingRepository bookingRepository;
@@ -44,8 +44,6 @@ public class BookingController {
     @PostMapping
     public Booking createBooking(@RequestBody @Valid Booking booking) {
         validateAndCalculate(booking, null);
-
-        // Chiunque loggato può creare una prenotazione, la proprietà è data dal Customer
         return bookingRepository.save(booking);
     }
 
@@ -54,7 +52,6 @@ public class BookingController {
         Booking existingBooking = bookingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Booking con id " + id + " non trovato"));
 
-        //  Controllo che solo il proprietario o admin possa modificare
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!existingBooking.getCustomer().getEmail().equals(username) && !isAdmin()) {
             throw new SecurityException("Non puoi modificare una prenotazione che non è tua.");
@@ -77,7 +74,6 @@ public class BookingController {
         Booking existingBooking = bookingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Booking con id " + id + " non trovato"));
 
-        //  Controllo che solo il proprietario o admin possa cancellare
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!existingBooking.getCustomer().getEmail().equals(username) && !isAdmin()) {
             throw new SecurityException("Non puoi eliminare una prenotazione che non è tua.");
@@ -86,7 +82,6 @@ public class BookingController {
         bookingRepository.deleteById(id);
     }
 
-    // Controlla date, calcola notti e totale, verifica overlap (escludendo il booking stesso in caso di PUT)
     private void validateAndCalculate(Booking booking, Long excludeBookingId) {
         if (booking.getCheckIn() == null || booking.getCheckOut() == null) {
             throw new IllegalArgumentException("Devi specificare le date di check-in e check-out.");
@@ -120,9 +115,6 @@ public class BookingController {
         booking.setNights((int) days);
         booking.setTotalPrice(booking.getRoom().getPricePerNight() * booking.getNights());
     }
-
-
-     // Controlla se l'utente attuale ha il ruolo ADMIN
 
     private boolean isAdmin() {
         return request.isUserInRole("ADMIN");
