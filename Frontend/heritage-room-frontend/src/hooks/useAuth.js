@@ -1,23 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [role, setRole] = useState(null); // "ADMIN" o "USER"
+  const [user, setUser] = useState(null);
 
-  function loginAsAdmin() {
-    setIsAuthenticated(true);
-    setRole("ADMIN");
-  }
+  useEffect(() => {
+    const auth = localStorage.getItem("auth");
+    if (!auth) return;
 
-  function loginAsUser() {
-    setIsAuthenticated(true);
-    setRole("USER");
-  }
+    fetch("http://localhost:8080/api/auth/me", {
+      headers: {
+        Authorization: `Basic ${auth}`,
+      },
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Not authenticated");
+        return res.json();
+      })
+      .then(setUser)
+      .catch(() => setUser(null));
+  }, []);
 
-  function logout() {
-    setIsAuthenticated(false);
-    setRole(null);
-  }
-
-  return { isAuthenticated, role, loginAsAdmin, loginAsUser, logout };
+  return user;
 }

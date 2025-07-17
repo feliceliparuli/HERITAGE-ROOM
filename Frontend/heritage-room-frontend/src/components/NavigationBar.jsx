@@ -1,11 +1,22 @@
-import { Navbar, Nav, Container, Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Navbar, Nav, Container, Dropdown, Image } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo-ss.png";
-import useAuth from "../hooks/useAuth";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../store/userSlice";
 
 export default function NavigationBar() {
-  const { isAuthenticated, role, loginAsAdmin, loginAsUser, logout } =
-    useAuth();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { email, role } = useSelector((state) => state.user);
+  const isAuthenticated = !!email;
+
+  console.log("Redux auth check:", { email, role }); // Debug
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/");
+  };
 
   return (
     <Navbar bg="light" expand="lg">
@@ -41,24 +52,35 @@ export default function NavigationBar() {
               </Nav.Link>
             )}
           </Nav>
-          <div className="d-flex">
+
+          <div className="d-flex align-items-center">
             {isAuthenticated ? (
-              <Button variant="outline-danger" onClick={logout}>
-                Logout
-              </Button>
-            ) : (
-              <>
-                <Button
-                  variant="outline-success"
-                  className="me-2"
-                  onClick={loginAsAdmin}
+              <Dropdown align="end">
+                <Dropdown.Toggle
+                  variant="light"
+                  id="dropdown-user"
+                  className="d-flex align-items-center"
                 >
-                  Login Admin
-                </Button>
-                <Button variant="outline-primary" onClick={loginAsUser}>
-                  Login User
-                </Button>
-              </>
+                  <Image
+                    src={`https://ui-avatars.com/api/?name=${email}&size=32&background=random`}
+                    roundedCircle
+                    className="me-2"
+                  />
+                  <span className="text-muted">{role}</span>
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            ) : (
+              <Nav.Link
+                as={Link}
+                to="/login"
+                className="btn btn-outline-primary"
+              >
+                Login
+              </Nav.Link>
             )}
           </div>
         </Navbar.Collapse>

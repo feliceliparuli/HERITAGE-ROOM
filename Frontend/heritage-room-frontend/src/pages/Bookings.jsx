@@ -2,24 +2,19 @@ import { useEffect, useState } from "react";
 import useAuth from "../hooks/useAuth";
 
 function Bookings() {
+  const { roles } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errore, setErrore] = useState("");
 
-  const { getAuthHeader, isAuthenticated } = useAuth();
-
   useEffect(() => {
-    if (!isAuthenticated) return; // non caricare se non autenticato
+    const endpoint = roles.includes("ROLE_ADMIN")
+      ? "http://localhost:8080/api/bookings"
+      : "http://localhost:8080/api/bookings/my";
 
-    fetch("http://localhost:8080/api/bookings", {
-      headers: {
-        ...getAuthHeader(),
-      },
-    })
+    fetch(endpoint, { credentials: "include" })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("Errore HTTP: " + response.status);
-        }
+        if (!response.ok) throw new Error("Errore HTTP: " + response.status);
         return response.json();
       })
       .then((data) => {
@@ -27,15 +22,13 @@ function Bookings() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Errore durante il caricamento delle prenotazioni:", err);
-        setErrore("Errore durante il caricamento delle prenotazioni");
+        console.error("Errore:", err);
+        setErrore("Errore nel caricamento delle prenotazioni");
         setLoading(false);
       });
-  }, [isAuthenticated]); // ricarica quando fa login
+  }, [roles]);
 
-  if (!isAuthenticated)
-    return <p>Effettua il login per vedere le prenotazioni.</p>;
-  if (loading) return <p>Caricamento prenotazioni...</p>;
+  if (loading) return <p>Caricamento...</p>;
   if (errore) return <p>{errore}</p>;
 
   return (
@@ -44,8 +37,7 @@ function Bookings() {
       <ul>
         {bookings.map((b) => (
           <li key={b.id}>
-            Cliente: {b.customer?.name} | Stanza: {b.room?.name} | {b.checkIn} ➔{" "}
-            {b.checkOut}
+            {b.customer?.name} – {b.room?.name} – {b.checkIn} → {b.checkOut}
           </li>
         ))}
       </ul>

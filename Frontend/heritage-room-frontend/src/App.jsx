@@ -4,14 +4,38 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { useEffect } from "react";
+
 import NavigationBar from "./components/NavigationBar";
 import Rooms from "./pages/Rooms";
 import Bookings from "./pages/Bookings";
 import Clients from "./pages/Clients";
-import useAuth from "./hooks/useAuth";
+import BookingForm from "./components/BookingForm";
+import LoginForm from "./components/LoginForm";
+
+import { loadUserFromStorage } from "./store/userSlice";
 
 function App() {
-  const { isAuthenticated, role } = useAuth();
+  const dispatch = useDispatch();
+  const { email, role, status } = useSelector((state) => state.user);
+  const isAuthenticated = !!email;
+
+  // Al primo caricamento, prova a caricare utente da localStorage
+  useEffect(() => {
+    dispatch(loadUserFromStorage());
+  }, [dispatch]);
+
+  // Mentre lo stato è "loading", mostra spinner/placeholder
+  if (status === "loading") {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Caricamento...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Router>
@@ -46,6 +70,20 @@ function App() {
             path="/bookings"
             element={
               isAuthenticated ? <Bookings /> : <Navigate to="/" replace />
+            }
+          />
+
+          <Route
+            path="/bookings/new"
+            element={
+              isAuthenticated ? <BookingForm /> : <Navigate to="/" replace />
+            }
+          />
+
+          <Route
+            path="/login"
+            element={
+              isAuthenticated ? <Navigate to="/" replace /> : <LoginForm />
             }
           />
         </Routes>
