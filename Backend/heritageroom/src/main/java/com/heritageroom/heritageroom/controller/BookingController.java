@@ -30,16 +30,26 @@ public class BookingController {
         return bookingRepository.findAll();
     }
 
+
     @GetMapping("/{id}")
     public Booking getBookingById(@PathVariable Long id) {
         return bookingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Booking con id " + id + " non trovato"));
+                .orElseThrow(() -> new IllegalArgumentException("Booking with ID " + id + " not found"));
     }
+
 
     @GetMapping("/by-customer/{customerId}")
     public List<Booking> getBookingsByCustomer(@PathVariable Long customerId) {
         return bookingRepository.findByCustomerId(customerId);
     }
+
+
+    @GetMapping("/my")
+    public List<Booking> getMyBookings() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return bookingRepository.findByCustomerEmail(email);
+    }
+
 
     @PostMapping
     public Booking createBooking(@RequestBody @Valid Booking booking) {
@@ -47,14 +57,15 @@ public class BookingController {
         return bookingRepository.save(booking);
     }
 
+
     @PutMapping("/{id}")
     public Booking updateBooking(@PathVariable Long id, @RequestBody @Valid Booking bookingDetails) {
         Booking existingBooking = bookingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Booking con id " + id + " non trovato"));
+                .orElseThrow(() -> new IllegalArgumentException("Booking with ID " + id + " not found"));
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!existingBooking.getCustomer().getEmail().equals(username) && !isAdmin()) {
-            throw new SecurityException("Non puoi modificare una prenotazione che non è tua.");
+            throw new SecurityException("You cannot update a booking that is not yours.");
         }
 
         validateAndCalculate(bookingDetails, existingBooking.getId());
@@ -69,31 +80,33 @@ public class BookingController {
         return bookingRepository.save(existingBooking);
     }
 
+
     @DeleteMapping("/{id}")
     public void deleteBooking(@PathVariable Long id) {
         Booking existingBooking = bookingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Booking con id " + id + " non trovato"));
+                .orElseThrow(() -> new IllegalArgumentException("Booking with ID " + id + " not found"));
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!existingBooking.getCustomer().getEmail().equals(username) && !isAdmin()) {
-            throw new SecurityException("Non puoi eliminare una prenotazione che non è tua.");
+            throw new SecurityException("You cannot delete a booking that is not yours.");
         }
 
         bookingRepository.deleteById(id);
     }
 
+
     private void validateAndCalculate(Booking booking, Long excludeBookingId) {
         if (booking.getCheckIn() == null || booking.getCheckOut() == null) {
-            throw new IllegalArgumentException("Devi specificare le date di check-in e check-out.");
+            throw new IllegalArgumentException("Check-in and check-out dates must be provided.");
         }
 
         long days = ChronoUnit.DAYS.between(booking.getCheckIn(), booking.getCheckOut());
         if (days <= 0) {
-            throw new IllegalArgumentException("La data di check-out deve essere dopo la data di check-in.");
+            throw new IllegalArgumentException("Check-out must be after check-in.");
         }
 
         if (booking.getRoom() == null || booking.getRoom().getPricePerNight() == null) {
-            throw new IllegalArgumentException("Devi specificare la stanza e il prezzo per notte.");
+            throw new IllegalArgumentException("Room and price per night must be specified.");
         }
 
         List<Booking> overlapping = bookingRepository.findOverlappingBookings(
@@ -109,13 +122,14 @@ public class BookingController {
         }
 
         if (!overlapping.isEmpty()) {
-            throw new IllegalArgumentException("La stanza è già prenotata in queste date.");
+            throw new IllegalArgumentException("Room is already booked in the selected dates.");
         }
 
         booking.setNights((int) days);
         booking.setTotalPrice(booking.getRoom().getPricePerNight() * booking.getNights());
     }
 
+    // Check if user has ADMIN role
     private boolean isAdmin() {
         return request.isUserInRole("ADMIN");
     }
