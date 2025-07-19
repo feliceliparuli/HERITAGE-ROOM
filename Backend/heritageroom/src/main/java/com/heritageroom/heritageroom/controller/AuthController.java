@@ -1,32 +1,32 @@
 package com.heritageroom.heritageroom.controller;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+import com.heritageroom.heritageroom.dto.AuthRequest;
+import com.heritageroom.heritageroom.security.JwtUtil;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @GetMapping("/me")
-    public Map<String, Object> getCurrentUser(Authentication authentication) {
-        if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
-            throw new RuntimeException("Utente non autenticato");
-        }
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
 
-        UserDetails user = (UserDetails) authentication.getPrincipal();
+    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
+        this.authenticationManager = authenticationManager;
+        this.jwtUtil = jwtUtil;
+    }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("email", user.getUsername());
-        response.put("role", user.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .findFirst()
-                .orElse("UNKNOWN"));
+    @PostMapping("/login")
+    public Map<String, String> login(@RequestBody AuthRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
 
-        return response;
+        String token = jwtUtil.generateToken(request.getEmail());
+        return Map.of("token", token);
     }
 }
