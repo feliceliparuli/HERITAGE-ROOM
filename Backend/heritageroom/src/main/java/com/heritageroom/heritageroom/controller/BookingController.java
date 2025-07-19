@@ -1,7 +1,9 @@
 package com.heritageroom.heritageroom.controller;
 
 import com.heritageroom.heritageroom.model.Booking;
+import com.heritageroom.heritageroom.model.Room;
 import com.heritageroom.heritageroom.repository.BookingRepository;
+import com.heritageroom.heritageroom.repository.RoomRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,9 @@ public class BookingController {
     private final BookingRepository bookingRepository;
 
     @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
     private HttpServletRequest request;
 
     public BookingController(BookingRepository bookingRepository) {
@@ -30,19 +35,16 @@ public class BookingController {
         return bookingRepository.findAll();
     }
 
-
     @GetMapping("/{id}")
     public Booking getBookingById(@PathVariable Long id) {
         return bookingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Booking with ID " + id + " not found"));
     }
 
-
     @GetMapping("/by-customer/{customerId}")
     public List<Booking> getBookingsByCustomer(@PathVariable Long customerId) {
         return bookingRepository.findByCustomerId(customerId);
     }
-
 
     @GetMapping("/my")
     public List<Booking> getMyBookings() {
@@ -50,13 +52,11 @@ public class BookingController {
         return bookingRepository.findByCustomerEmail(email);
     }
 
-
     @PostMapping
     public Booking createBooking(@RequestBody @Valid Booking booking) {
         validateAndCalculate(booking, null);
         return bookingRepository.save(booking);
     }
-
 
     @PutMapping("/{id}")
     public Booking updateBooking(@PathVariable Long id, @RequestBody @Valid Booking bookingDetails) {
@@ -80,7 +80,6 @@ public class BookingController {
         return bookingRepository.save(existingBooking);
     }
 
-
     @DeleteMapping("/{id}")
     public void deleteBooking(@PathVariable Long id) {
         Booking existingBooking = bookingRepository.findById(id)
@@ -94,7 +93,6 @@ public class BookingController {
         bookingRepository.deleteById(id);
     }
 
-
     private void validateAndCalculate(Booking booking, Long excludeBookingId) {
         if (booking.getCheckIn() == null || booking.getCheckOut() == null) {
             throw new IllegalArgumentException("Check-in and check-out dates must be provided.");
@@ -105,9 +103,9 @@ public class BookingController {
             throw new IllegalArgumentException("Check-out must be after check-in.");
         }
 
-        if (booking.getRoom() == null || booking.getRoom().getPricePerNight() == null) {
-            throw new IllegalArgumentException("Room and price per night must be specified.");
-        }
+        Room room = roomRepository.findById(booking.getRoom().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
+        booking.setRoom(room);
 
         List<Booking> overlapping = bookingRepository.findOverlappingBookings(
                 booking.getRoom().getId(),
@@ -129,7 +127,6 @@ public class BookingController {
         booking.setTotalPrice(booking.getRoom().getPricePerNight() * booking.getNights());
     }
 
-    // Check if user has ADMIN role
     private boolean isAdmin() {
         return request.isUserInRole("ADMIN");
     }

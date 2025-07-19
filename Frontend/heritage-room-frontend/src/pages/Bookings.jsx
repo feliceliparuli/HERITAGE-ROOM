@@ -1,46 +1,108 @@
 import { useEffect, useState } from "react";
-import useAuth from "../hooks/useAuth";
+import { useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { Button, Table } from "react-bootstrap";
 
 function Bookings() {
-  const { roles } = useAuth();
+  const { role } = useSelector((state) => state.user);
   const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [errore, setErrore] = useState("");
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  const fetchBookings = () => {
+    const endpoint =
+      role === "ADMIN"
+        ? "http://localhost:8080/api/bookings"
+        : "http://localhost:8080/api/bookings/my";
+
+    fetch(endpoint, {
+      headers: {
+        Authorization: "Basic " + localStorage.getItem("auth"),
+      },
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Impossibile caricare le prenotazioni");
+        return res.json();
+      })
+      .then(setBookings)
+      .catch((err) => setError(err.message));
+  };
 
   useEffect(() => {
-    const endpoint = roles.includes("ROLE_ADMIN")
-      ? "http://localhost:8080/api/bookings"
-      : "http://localhost:8080/api/bookings/my";
+    fetchBookings();
+  }, [role]);
 
-    fetch(endpoint, { credentials: "include" })
-      .then((response) => {
-        if (!response.ok) throw new Error("Errore HTTP: " + response.status);
-        return response.json();
-      })
-      .then((data) => {
-        setBookings(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Errore:", err);
-        setErrore("Errore nel caricamento delle prenotazioni");
-        setLoading(false);
-      });
-  }, [roles]);
+  const handleDelete = (id) => {
+    if (!window.confirm("Confermi la cancellazione della prenotazione?"))
+      return;
 
-  if (loading) return <p>Caricamento...</p>;
-  if (errore) return <p>{errore}</p>;
+    fetch(`http://localhost:8080/api/bookings/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: "Basic " + localStorage.getItem("auth"),
+      },
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Errore durante l'eliminazione");
+        fetchBookings(); // ricarica la lista
+      })
+      .catch((err) => alert(err.message));
+  };
 
   return (
-    <div>
-      <h2>Prenotazioni</h2>
-      <ul>
-        {bookings.map((b) => (
-          <li key={b.id}>
-            {b.customer?.name} – {b.room?.name} – {b.checkIn} → {b.checkOut}
-          </li>
-        ))}
-      </ul>
+    <div className="container mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2>
+          {role === "ADMIN" ? "Tutte le Prenotazioni" : "Le Mie Prenotazioni"}
+        </h2>
+        <Button as={Link} to="/bookings/new" variant="primary">
+          Nuova Prenotazione
+        </Button>
+      </div>
+
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      <Table striped bordered hover responsive>
+        <thead>
+          <tr>
+            <th>Room</th>
+            <th>Customer</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bookings.map((b) => (
+            <tr key={b.id}>
+              <td>{b.room?.name || "—"}</td>
+              <td>{b.customer?.name || "—"}</td>
+              <td>{b.startDate}</td>
+              <td>{b.endDate}</td>
+              <td>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  className="me-2"
+                  as={Link}
+                  to={`/bookings/edit/${b.id}`}
+                >
+                  Modifica
+                </Button>
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={() => handleDelete(b.id)}
+                >
+                  Cancella
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
     </div>
   );
 }
