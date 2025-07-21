@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 function Clients() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errore, setErrore] = useState("");
 
+  const { email, status } = useSelector((state) => state.user);
+
   useEffect(() => {
-    fetch("http://localhost:8080/api/customers", {
+    if (status !== "succeeded" || !email) return;
+
+    fetch("/api/customers", {
+      headers: {
+        Authorization: "Basic " + localStorage.getItem("auth"),
+      },
       credentials: "include",
     })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("Errore HTTP: " + response.status);
-        }
+        if (!response.ok) throw new Error("Errore HTTP: " + response.status);
         return response.json();
       })
       .then((data) => {
@@ -24,7 +30,7 @@ function Clients() {
         setErrore("Errore durante il caricamento dei clienti");
         setLoading(false);
       });
-  }, []);
+  }, [email, status]);
 
   if (loading) return <p>Caricamento clienti...</p>;
   if (errore) return <p>{errore}</p>;

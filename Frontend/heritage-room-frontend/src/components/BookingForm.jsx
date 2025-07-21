@@ -14,32 +14,44 @@ function BookingForm() {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  const { email, role } = useSelector((state) => state.user);
+  const { email, role, status } = useSelector((state) => state.user);
 
   // Carica stanze
   useEffect(() => {
-    fetch("http://localhost:8080/api/rooms")
-      .then((res) => res.json())
-      .then(setRooms)
-      .catch(() => setRooms([]));
-  }, []);
+    if (status !== "succeeded") return;
 
-  // Carica clienti: tutti se ADMIN, solo sé stesso se USER
-  useEffect(() => {
-    const auth = {
+    fetch("/api/rooms", {
       headers: {
         Authorization: "Basic " + localStorage.getItem("auth"),
       },
       credentials: "include",
+    })
+      .then((res) => res.json())
+      .then(setRooms)
+      .catch(() => setRooms([]));
+  }, [status]);
+
+  // Carica clienti
+  useEffect(() => {
+    if (status !== "succeeded") return;
+
+    const headers = {
+      Authorization: "Basic " + localStorage.getItem("auth"),
     };
 
     if (role === "ADMIN") {
-      fetch("http://localhost:8080/api/customers", auth)
+      fetch("/api/customers", {
+        headers,
+        credentials: "include",
+      })
         .then((res) => res.json())
         .then(setCustomers)
         .catch(() => setCustomers([]));
     } else {
-      fetch("http://localhost:8080/api/customers/email/" + email, auth)
+      fetch("/api/customers/email/" + email, {
+        headers,
+        credentials: "include",
+      })
         .then((res) => res.json())
         .then((data) => {
           setCustomers([data]);
@@ -47,7 +59,7 @@ function BookingForm() {
         })
         .catch(() => setCustomers([]));
     }
-  }, [email, role]);
+  }, [email, role, status]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -59,7 +71,7 @@ function BookingForm() {
       checkOut,
     };
 
-    fetch("http://localhost:8080/api/bookings", {
+    fetch("/api/bookings", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -88,7 +100,6 @@ function BookingForm() {
       )}
 
       <Form onSubmit={handleSubmit}>
-        {/* Room */}
         <Form.Group className="mb-3">
           <Form.Label>Stanza</Form.Label>
           <Form.Select
@@ -105,7 +116,6 @@ function BookingForm() {
           </Form.Select>
         </Form.Group>
 
-        {/* Customer */}
         <Form.Group className="mb-3">
           <Form.Label>Cliente</Form.Label>
           {role === "ADMIN" ? (
@@ -130,7 +140,6 @@ function BookingForm() {
           )}
         </Form.Group>
 
-        {/* Check-in */}
         <Form.Group className="mb-3">
           <Form.Label>Check-In</Form.Label>
           <Form.Control
@@ -141,7 +150,6 @@ function BookingForm() {
           />
         </Form.Group>
 
-        {/* Check-out */}
         <Form.Group className="mb-3">
           <Form.Label>Check-Out</Form.Label>
           <Form.Control

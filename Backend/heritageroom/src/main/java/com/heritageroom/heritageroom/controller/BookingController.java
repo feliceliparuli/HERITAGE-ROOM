@@ -1,133 +1,107 @@
 package com.heritageroom.heritageroom.controller;
 
 import com.heritageroom.heritageroom.model.Booking;
-import com.heritageroom.heritageroom.model.Room;
+import com.heritageroom.heritageroom.model.Customer;
 import com.heritageroom.heritageroom.repository.BookingRepository;
-import com.heritageroom.heritageroom.repository.RoomRepository;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.heritageroom.heritageroom.repository.CustomerRepository;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class BookingController {
 
     private final BookingRepository bookingRepository;
+    private final CustomerRepository customerRepository;
 
-    @Autowired
-    private RoomRepository roomRepository;
-
-    @Autowired
-    private HttpServletRequest request;
-
-    public BookingController(BookingRepository bookingRepository) {
+    public BookingController(BookingRepository bookingRepository, CustomerRepository customerRepository) {
         this.bookingRepository = bookingRepository;
+        this.customerRepository = customerRepository;
     }
 
-    @GetMapping
-    public List<Booking> getAllBookings() {
-        return bookingRepository.findAll();
-    }
-
-    @GetMapping("/{id}")
-    public Booking getBookingById(@PathVariable Long id) {
-        return bookingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Booking with ID " + id + " not found"));
-    }
-
-    @GetMapping("/by-customer/{customerId}")
-    public List<Booking> getBookingsByCustomer(@PathVariable Long customerId) {
-        return bookingRepository.findByCustomerId(customerId);
-    }
-
-    @GetMapping("/my")
-    public List<Booking> getMyBookings() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return bookingRepository.findByCustomerEmail(email);
-    }
-
+    // ✅ Crea prenotazione (USER o ADMIN)
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PostMapping
-    public Booking createBooking(@RequestBody @Valid Booking booking) {
-        validateAndCalculate(booking, null);
+    public Booking createBooking(@RequestBody Booking booking, Principal principal) {
+        validateDates(booking);
+        Customer customer = customerRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Utente non trovato"));
+        booking.setCustomer(customer);
+        booking.setNights((int) ChronoUnit.DAYS.between(booking.getCheckIn(), booking.getCheckOut()));
         return bookingRepository.save(booking);
     }
 
+    // ✅ Modifica prenotazione (solo proprietario o ADMIN)
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PutMapping("/{id}")
-    public Booking updateBooking(@PathVariable Long id, @RequestBody @Valid Booking bookingDetails) {
-        Booking existingBooking = bookingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Booking with ID " + id + " not found"));
+    public Booking updateBooking(@PathVariable Long id, @RequestBody Booking updated, Principal principal) {
+        Booking existing = bookingRepository.findById(id).orElseThrow();
+        String userEmail = principal.getName();
+        boolean isAdmin = hasRole("ADMIN");
 
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!existingBooking.getCustomer().getEmail().equals(username) && !isAdmin()) {
-            throw new SecurityException("You cannot update a booking that is not yours.");
+        if (!existing.getCustomerEmail().equals(userEmail) && !isAdmin) {
+            throw new SecurityException("Accesso negato: non sei il proprietario.");
         }
 
-        validateAndCalculate(bookingDetails, existingBooking.getId());
+        validateDates(updated);
+        existing.setCheckIn(updated.getCheckIn());
+        existing.setCheckOut(updated.getCheckOut());
+        existing.setNights((int) ChronoUnit.DAYS.between(updated.getCheckIn(), updated.getCheckOut()));
 
-        existingBooking.setCheckIn(bookingDetails.getCheckIn());
-        existingBooking.setCheckOut(bookingDetails.getCheckOut());
-        existingBooking.setRoom(bookingDetails.getRoom());
-        existingBooking.setCustomer(bookingDetails.getCustomer());
-        existingBooking.setNights(bookingDetails.getNights());
-        existingBooking.setTotalPrice(bookingDetails.getTotalPrice());
-
-        return bookingRepository.save(existingBooking);
+        return bookingRepository.save(existing);
     }
 
+    // ✅ Cancella prenotazione (solo proprietario o ADMIN)
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @DeleteMapping("/{id}")
-    public void deleteBooking(@PathVariable Long id) {
-        Booking existingBooking = bookingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Booking with ID " + id + " not found"));
+    public void deleteBooking(@PathVariable Long id, Principal principal) {
+        Booking booking = bookingRepository.findById(id).orElseThrow();
+        String userEmail = principal.getName();
+        boolean isAdmin = hasRole("ADMIN");
 
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!existingBooking.getCustomer().getEmail().equals(username) && !isAdmin()) {
-            throw new SecurityException("You cannot delete a booking that is not yours.");
+        if (!booking.getCustomerEmail().equals(userEmail) && !isAdmin) {
+            throw new SecurityException("Accesso negato: non sei il proprietario.");
         }
 
         bookingRepository.deleteById(id);
     }
 
-    private void validateAndCalculate(Booking booking, Long excludeBookingId) {
-        if (booking.getCheckIn() == null || booking.getCheckOut() == null) {
-            throw new IllegalArgumentException("Check-in and check-out dates must be provided.");
-        }
-
-        long days = ChronoUnit.DAYS.between(booking.getCheckIn(), booking.getCheckOut());
-        if (days <= 0) {
-            throw new IllegalArgumentException("Check-out must be after check-in.");
-        }
-
-        Room room = roomRepository.findById(booking.getRoom().getId())
-                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
-        booking.setRoom(room);
-
-        List<Booking> overlapping = bookingRepository.findOverlappingBookings(
-                booking.getRoom().getId(),
-                booking.getCheckIn(),
-                booking.getCheckOut()
-        );
-
-        if (excludeBookingId != null) {
-            overlapping = overlapping.stream()
-                    .filter(b -> !b.getId().equals(excludeBookingId))
-                    .toList();
-        }
-
-        if (!overlapping.isEmpty()) {
-            throw new IllegalArgumentException("Room is already booked in the selected dates.");
-        }
-
-        booking.setNights((int) days);
-        booking.setTotalPrice(booking.getRoom().getPricePerNight() * booking.getNights());
+    // ✅ Visualizza le proprie prenotazioni
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/me")
+    public List<Booking> getMyBookings(Principal principal) {
+        return bookingRepository.findByCustomerEmail(principal.getName());
     }
 
-    private boolean isAdmin() {
-        return request.isUserInRole("ADMIN");
+    // ✅ Solo ADMIN vede tutte le prenotazioni
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    public List<Booking> getAllBookings() {
+        return bookingRepository.findAll();
+    }
+
+    // 🔒 Controllo se l'utente ha un ruolo specifico
+    private boolean hasRole(String role) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(r -> r.equals("ROLE_" + role));
+    }
+
+    // 🔍 Validazione logica delle date
+    private void validateDates(Booking booking) {
+        if (booking.getCheckIn() == null || booking.getCheckOut() == null) {
+            throw new IllegalArgumentException("Le date non possono essere null.");
+        }
+        if (!booking.getCheckOut().isAfter(booking.getCheckIn())) {
+            throw new IllegalArgumentException("La data di check-out deve essere successiva al check-in.");
+        }
     }
 }

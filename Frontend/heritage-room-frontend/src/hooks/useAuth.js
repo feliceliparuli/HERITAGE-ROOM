@@ -7,7 +7,7 @@ export default function useAuth() {
     const auth = localStorage.getItem("auth");
     if (!auth) return;
 
-    fetch("http://localhost:8080/api/auth/me", {
+    fetch("/api/auth/me", {
       headers: {
         Authorization: `Basic ${auth}`,
       },

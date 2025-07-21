@@ -1,34 +1,37 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
+// 🔄 Carica l’utente dal backend se ci sono credenziali
 export const loadUserFromStorage = createAsyncThunk(
   "user/loadUserFromStorage",
-  (_, thunkAPI) => {
+  async (_, thunkAPI) => {
     const encoded = localStorage.getItem("auth");
+
     if (!encoded) {
+      // Nessuna credenziale salvata → ignora il fetch
       return thunkAPI.rejectWithValue("No credentials");
     }
 
-    return fetch("http://localhost:8080/api/auth/me", {
-      method: "GET",
-      headers: {
-        Authorization: "Basic " + encoded,
-      },
-      credentials: "include",
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Not authenticated");
-        return res.json();
-      })
-      .then((data) => {
-        return {
-          email: data.email,
-          role: data.role.replace("ROLE_", ""), // Normalizza
-          id: data.id,
-        };
-      })
-      .catch((err) => {
-        return thunkAPI.rejectWithValue(err.message);
+    try {
+      const res = await fetch("/api/auth/me", {
+        method: "GET",
+        headers: {
+          Authorization: `Basic ${encoded}`,
+        },
+        credentials: "include",
       });
+
+      if (!res.ok) throw new Error("Utente non autenticato");
+
+      const data = await res.json();
+
+      return {
+        email: data.email,
+        role: data.role.replace("ROLE_", ""),
+        id: data.id,
+      };
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.message);
+    }
   }
 );
 
@@ -44,7 +47,7 @@ const userSlice = createSlice({
     loginSuccess: (state, action) => {
       const { email, role, id } = action.payload;
       state.email = email;
-      state.role = role.replace("ROLE_", ""); // ← Normalizza
+      state.role = role.replace("ROLE_", "");
       state.id = id;
       state.status = "succeeded";
     },
@@ -64,12 +67,12 @@ const userSlice = createSlice({
       .addCase(loadUserFromStorage.fulfilled, (state, action) => {
         const { email, role, id } = action.payload;
         state.email = email;
-        state.role = role; // già normalizzato prima
+        state.role = role;
         state.id = id;
         state.status = "succeeded";
       })
       .addCase(loadUserFromStorage.rejected, (state) => {
-        state.status = "failed";
+        state.status = "idle"; // fallback neutro per evitare blocchi
         state.email = null;
         state.role = null;
         state.id = null;

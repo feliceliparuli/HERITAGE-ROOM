@@ -1,3 +1,4 @@
+
 package com.heritageroom.heritageroom.repository;
 
 import com.heritageroom.heritageroom.model.Booking;
@@ -18,5 +19,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByCustomerId(Long customerId);
 
-    List<Booking> findByCustomerEmail(String email);
+    @Query("SELECT b FROM Booking b WHERE b.customer.email = :email")
+    List<Booking> findByCustomerEmail(@Param("email") String email);
 }

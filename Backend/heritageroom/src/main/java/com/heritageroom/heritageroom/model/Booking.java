@@ -34,4 +34,15 @@ public class Booking {
 
     @Positive(message = "Il prezzo deve essere positivo")
     private Double totalPrice;
+
+    public String getCustomerEmail() {
+        return customer != null ? customer.getEmail() : null;
+    }
+
+    public void setCustomerEmail(String email) {
+        if (this.customer == null) {
+            this.customer = new Customer();
+        }
+        this.customer.setEmail(email);
+    }
 }

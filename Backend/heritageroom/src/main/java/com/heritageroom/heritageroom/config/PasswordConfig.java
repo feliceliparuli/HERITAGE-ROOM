@@ -1,4 +1,5 @@
-package com.heritageroom.heritageroom.config;
+
+package com.heritageroom.heritageroom.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

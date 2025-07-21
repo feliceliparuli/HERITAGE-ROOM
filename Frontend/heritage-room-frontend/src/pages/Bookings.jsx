@@ -4,16 +4,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button, Table } from "react-bootstrap";
 
 function Bookings() {
-  const { role } = useSelector((state) => state.user);
+  const { email, role, status } = useSelector((state) => state.user);
   const [bookings, setBookings] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const fetchBookings = () => {
-    const endpoint =
-      role === "ADMIN"
-        ? "http://localhost:8080/api/bookings"
-        : "http://localhost:8080/api/bookings/my";
+    const endpoint = role === "ADMIN" ? "/api/bookings" : "/api/bookings/me";
 
     fetch(endpoint, {
       headers: {
@@ -30,14 +27,15 @@ function Bookings() {
   };
 
   useEffect(() => {
+    if (status !== "succeeded" || !email) return;
     fetchBookings();
-  }, [role]);
+  }, [role, status, email]);
 
   const handleDelete = (id) => {
     if (!window.confirm("Confermi la cancellazione della prenotazione?"))
       return;
 
-    fetch(`http://localhost:8080/api/bookings/${id}`, {
+    fetch(`/api/bookings/${id}`, {
       method: "DELETE",
       headers: {
         Authorization: "Basic " + localStorage.getItem("auth"),
@@ -46,7 +44,7 @@ function Bookings() {
     })
       .then((res) => {
         if (!res.ok) throw new Error("Errore durante l'eliminazione");
-        fetchBookings(); // ricarica la lista
+        fetchBookings();
       })
       .catch((err) => alert(err.message));
   };
@@ -71,6 +69,7 @@ function Bookings() {
             <th>Customer</th>
             <th>Start Date</th>
             <th>End Date</th>
+            <th>Totale</th>
             <th>Azioni</th>
           </tr>
         </thead>
@@ -81,6 +80,9 @@ function Bookings() {
               <td>{b.customer?.name || "—"}</td>
               <td>{b.startDate}</td>
               <td>{b.endDate}</td>
+              <td>
+                {b.totalPrice != null ? `${b.totalPrice.toFixed(2)} €` : "—"}
+              </td>
               <td>
                 <Button
                   variant="outline-secondary"

@@ -1,3 +1,4 @@
+
 package com.heritageroom.heritageroom.model;
 
 import jakarta.persistence.*;
@@ -25,4 +26,7 @@ public class Customer {
 
     @NotBlank
     private String password;
+
+    @NotBlank
+    private String role;
 }
