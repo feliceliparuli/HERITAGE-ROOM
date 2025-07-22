@@ -15,23 +15,8 @@ function BookingForm() {
   const navigate = useNavigate();
 
   const { email, role, status } = useSelector((state) => state.user);
+  const today = new Date().toISOString().split("T")[0];
 
-  // Carica stanze
-  useEffect(() => {
-    if (status !== "succeeded") return;
-
-    fetch("/api/rooms", {
-      headers: {
-        Authorization: "Basic " + localStorage.getItem("auth"),
-      },
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then(setRooms)
-      .catch(() => setRooms([]));
-  }, [status]);
-
-  // Carica clienti
   useEffect(() => {
     if (status !== "succeeded") return;
 
@@ -40,10 +25,7 @@ function BookingForm() {
     };
 
     if (role === "ADMIN") {
-      fetch("/api/customers", {
-        headers,
-        credentials: "include",
-      })
+      fetch("/api/customers", { headers, credentials: "include" })
         .then((res) => res.json())
         .then(setCustomers)
         .catch(() => setCustomers([]));
@@ -60,6 +42,20 @@ function BookingForm() {
         .catch(() => setCustomers([]));
     }
   }, [email, role, status]);
+
+  useEffect(() => {
+    if (!checkIn || !checkOut) return;
+
+    fetch(`/api/rooms/available?checkIn=${checkIn}&checkOut=${checkOut}`, {
+      headers: {
+        Authorization: "Basic " + localStorage.getItem("auth"),
+      },
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then(setRooms)
+      .catch(() => setRooms([]));
+  }, [checkIn, checkOut]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -101,20 +97,44 @@ function BookingForm() {
 
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3">
-          <Form.Label>Stanza</Form.Label>
-          <Form.Select
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
+          <Form.Label>Check-In</Form.Label>
+          <Form.Control
+            type="date"
+            value={checkIn}
+            onChange={(e) => setCheckIn(e.target.value)}
+            min={today}
             required
-          >
-            <option value="">Seleziona una stanza</option>
-            {rooms.map((room) => (
-              <option key={room.id} value={room.id}>
-                {room.name} (€{room.pricePerNight}/notte)
-              </option>
-            ))}
-          </Form.Select>
+          />
         </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Form.Label>Check-Out</Form.Label>
+          <Form.Control
+            type="date"
+            value={checkOut}
+            onChange={(e) => setCheckOut(e.target.value)}
+            min={checkIn || today}
+            required
+          />
+        </Form.Group>
+
+        {checkIn && checkOut && (
+          <Form.Group className="mb-3">
+            <Form.Label>Stanza</Form.Label>
+            <Form.Select
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              required
+            >
+              <option value="">Seleziona una stanza</option>
+              {rooms.map((room) => (
+                <option key={room.id} value={room.id}>
+                  {room.name} (€{room.pricePerNight}/notte)
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+        )}
 
         <Form.Group className="mb-3">
           <Form.Label>Cliente</Form.Label>
@@ -127,40 +147,24 @@ function BookingForm() {
               <option value="">Seleziona un cliente</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.fullName} ({c.email})
+                  {c.name}
                 </option>
               ))}
             </Form.Select>
           ) : (
             <Form.Control
               type="text"
-              value={customers[0]?.fullName || email}
+              value={customers[0]?.name || email}
               disabled
             />
           )}
         </Form.Group>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Check-In</Form.Label>
-          <Form.Control
-            type="date"
-            value={checkIn}
-            onChange={(e) => setCheckIn(e.target.value)}
-            required
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-3">
-          <Form.Label>Check-Out</Form.Label>
-          <Form.Control
-            type="date"
-            value={checkOut}
-            onChange={(e) => setCheckOut(e.target.value)}
-            required
-          />
-        </Form.Group>
-
-        <Button type="submit" variant="primary">
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={!roomId || !customerId}
+        >
           Crea Prenotazione
         </Button>
       </Form>

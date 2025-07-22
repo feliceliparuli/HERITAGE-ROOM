@@ -67,8 +67,8 @@ function Bookings() {
           <tr>
             <th>Room</th>
             <th>Customer</th>
-            <th>Start Date</th>
-            <th>End Date</th>
+            <th>Check-in</th>
+            <th>Check-out</th>
             <th>Totale</th>
             <th>Azioni</th>
           </tr>
@@ -78,10 +78,12 @@ function Bookings() {
             <tr key={b.id}>
               <td>{b.room?.name || "—"}</td>
               <td>{b.customer?.name || "—"}</td>
-              <td>{b.startDate}</td>
-              <td>{b.endDate}</td>
+              <td>{b.checkIn || "—"}</td>
+              <td>{b.checkOut || "—"}</td>
               <td>
-                {b.totalPrice != null ? `${b.totalPrice.toFixed(2)} €` : "—"}
+                {b.room?.pricePerNight && b.nights
+                  ? `${(b.room.pricePerNight * b.nights).toFixed(2)} €`
+                  : "—"}
               </td>
               <td>
                 <Button

@@ -18,7 +18,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                           @Param("checkOut") LocalDate checkOut);
 
     List<Booking> findByCustomerId(Long customerId);
+    List<Booking> findByRoomIdAndCheckOutAfterAndCheckInBefore(Long roomId, LocalDate start, LocalDate end);
+
 
     @Query("SELECT b FROM Booking b WHERE b.customer.email = :email")
     List<Booking> findByCustomerEmail(@Param("email") String email);
+
+    List<Booking> findByRoomId(Long roomId);
+
 }
