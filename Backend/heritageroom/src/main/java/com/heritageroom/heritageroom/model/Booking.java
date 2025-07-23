@@ -4,8 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -34,6 +36,10 @@ public class Booking {
 
     @Positive(message = "Il prezzo deve essere positivo")
     private Double totalPrice;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
     public String getCustomerEmail() {
         return customer != null ? customer.getEmail() : null;
