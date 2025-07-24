@@ -8,10 +8,8 @@ export default function NavigationBar() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { email, role } = useSelector((state) => state.user);
-  const isAuthenticated = !!email;
-
-  console.log("Redux auth check:", { email, role }); // Debug
+  const user = useSelector((state) => state.user);
+  const isAuthenticated = !!user.email;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -33,7 +31,7 @@ export default function NavigationBar() {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
-            {isAuthenticated && role === "ADMIN" && (
+            {isAuthenticated && user.role === "ADMIN" && (
               <>
                 <Nav.Link as={Link} to="/rooms">
                   Rooms
@@ -46,7 +44,7 @@ export default function NavigationBar() {
                 </Nav.Link>
               </>
             )}
-            {isAuthenticated && role === "USER" && (
+            {isAuthenticated && user.role === "USER" && (
               <Nav.Link as={Link} to="/bookings">
                 My Bookings
               </Nav.Link>
@@ -62,11 +60,16 @@ export default function NavigationBar() {
                   className="d-flex align-items-center"
                 >
                   <Image
-                    src={`https://ui-avatars.com/api/?name=${email}&size=32&background=random`}
+                    src={`https://ui-avatars.com/api/?name=${
+                      user.name || user.email
+                    }&size=32&background=random`}
                     roundedCircle
                     className="me-2"
                   />
-                  <span className="text-muted">{role}</span>
+                  <span className="text-muted">
+                    {user.name || user.email}
+                    {user.role === "ADMIN" && " (admin)"}
+                  </span>
                 </Dropdown.Toggle>
 
                 <Dropdown.Menu>

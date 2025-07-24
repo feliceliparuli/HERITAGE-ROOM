@@ -5,6 +5,7 @@ import com.heritageroom.heritageroom.repository.CustomerRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,9 +15,12 @@ import java.util.List;
 public class CustomerController {
 
     private final CustomerRepository customerRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public CustomerController(CustomerRepository customerRepository) {
+    // ✅ Costruttore aggiornato con PasswordEncoder
+    public CustomerController(CustomerRepository customerRepository, PasswordEncoder passwordEncoder) {
         this.customerRepository = customerRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping
@@ -28,6 +32,14 @@ public class CustomerController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Customer> createCustomer(@RequestBody Customer customer) {
+
+        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
+
+
+        if (customer.getRole() == null) {
+            customer.setRole("USER");
+        }
+
         Customer saved = customerRepository.save(customer);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -60,4 +72,13 @@ public class CustomerController {
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/email/{email}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public ResponseEntity<Customer> getByEmail(@PathVariable String email) {
+        return customerRepository.findByEmail(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 }

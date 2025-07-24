@@ -8,6 +8,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
 
 import NavigationBar from "./components/NavigationBar";
+import Footer from "./components/Footer";
 import Rooms from "./pages/Rooms";
 import Bookings from "./pages/Bookings";
 import Clients from "./pages/Clients";
@@ -36,47 +37,52 @@ function App() {
 
   return (
     <Router>
-      <NavigationBar />
-      <div className="container mt-4">
-        <Routes>
-          <Route path="/" element={<h2>Benvenuto in Heritage Room</h2>} />
+      <div className="d-flex flex-column min-vh-100">
+        <NavigationBar />
 
-          <Route
-            path="/rooms"
-            element={
-              isAuthenticated && role === "ADMIN" ? (
-                <Rooms />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+        <main className="container my-4 flex-grow-1">
+          <Routes>
+            <Route path="/" element={<h2>Benvenuto in Heritage Room</h2>} />
 
-          <Route
-            path="/clients"
-            element={
-              isAuthenticated && role === "ADMIN" ? (
-                <Clients />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+            <Route
+              path="/rooms"
+              element={
+                isAuthenticated && role === "ADMIN" ? (
+                  <Rooms />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
-          <Route
-            path="/bookings"
-            element={
-              isAuthenticated ? <Bookings /> : <Navigate to="/" replace />
-            }
-          />
+            <Route
+              path="/clients"
+              element={
+                isAuthenticated && role === "ADMIN" ? (
+                  <Clients />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
-          <Route
-            path="/login"
-            element={
-              isAuthenticated ? <Navigate to="/" replace /> : <LoginForm />
-            }
-          />
-        </Routes>
+            <Route
+              path="/bookings"
+              element={
+                isAuthenticated ? <Bookings /> : <Navigate to="/" replace />
+              }
+            />
+
+            <Route
+              path="/login"
+              element={
+                isAuthenticated ? <Navigate to="/" replace /> : <LoginForm />
+              }
+            />
+          </Routes>
+        </main>
+
+        <Footer />
       </div>
     </Router>
   );

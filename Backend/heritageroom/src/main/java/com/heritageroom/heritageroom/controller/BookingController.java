@@ -140,10 +140,17 @@ public class BookingController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public List<Booking> getAllBookings() {
-        return bookingRepository.findAll();
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public List<Booking> getAllBookings(Authentication authentication) {
+        if (authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            return bookingRepository.findAll();
+        } else {
+            String email = authentication.getName();
+            return bookingRepository.findByCustomerEmail(email);
+        }
     }
+
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")

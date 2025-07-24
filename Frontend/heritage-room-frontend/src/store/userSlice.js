@@ -1,37 +1,33 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-// 🔄 Carica l’utente dal backend se ci sono credenziali
+// Carica l’utente dal backend se ci sono credenziali
 export const loadUserFromStorage = createAsyncThunk(
   "user/loadUserFromStorage",
-  async (_, thunkAPI) => {
+  (_, thunkAPI) => {
     const encoded = localStorage.getItem("auth");
 
     if (!encoded) {
-      // Nessuna credenziale salvata → ignora il fetch
       return thunkAPI.rejectWithValue("No credentials");
     }
 
-    try {
-      const res = await fetch("/api/auth/me", {
-        method: "GET",
-        headers: {
-          Authorization: `Basic ${encoded}`,
-        },
-        credentials: "include",
-      });
-
-      if (!res.ok) throw new Error("Utente non autenticato");
-
-      const data = await res.json();
-
-      return {
+    return fetch("/api/auth/me", {
+      method: "GET",
+      headers: { Authorization: `Basic ${encoded}` },
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Utente non autenticato");
+        }
+        return res.json();
+      })
+      .then((data) => ({
         email: data.email,
         role: data.role.replace("ROLE_", ""),
         id: data.id,
-      };
-    } catch (err) {
-      return thunkAPI.rejectWithValue(err.message);
-    }
+        name: data.name, // ✅ aggiunto
+      }))
+      .catch((err) => thunkAPI.rejectWithValue(err.message));
   }
 );
 
@@ -41,14 +37,16 @@ const userSlice = createSlice({
     email: null,
     role: null,
     id: null,
+    name: null,
     status: "idle",
   },
   reducers: {
     loginSuccess: (state, action) => {
-      const { email, role, id } = action.payload;
+      const { email, role, id, name } = action.payload;
       state.email = email;
       state.role = role.replace("ROLE_", "");
       state.id = id;
+      state.name = name;
       state.status = "succeeded";
     },
     logout: (state) => {
@@ -56,6 +54,7 @@ const userSlice = createSlice({
       state.email = null;
       state.role = null;
       state.id = null;
+      state.name = null;
       state.status = "idle";
     },
   },
@@ -65,17 +64,19 @@ const userSlice = createSlice({
         state.status = "loading";
       })
       .addCase(loadUserFromStorage.fulfilled, (state, action) => {
-        const { email, role, id } = action.payload;
+        const { email, role, id, name } = action.payload;
         state.email = email;
         state.role = role;
         state.id = id;
+        state.name = name;
         state.status = "succeeded";
       })
       .addCase(loadUserFromStorage.rejected, (state) => {
-        state.status = "idle"; // fallback neutro per evitare blocchi
         state.email = null;
         state.role = null;
         state.id = null;
+        state.name = null;
+        state.status = "idle";
       });
   },
 });

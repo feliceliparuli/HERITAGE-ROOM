@@ -32,13 +32,14 @@ public class RoomController {
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public List<Room> getAvailableRooms(
             @RequestParam("checkIn") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
-            @RequestParam("checkOut") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut
+            @RequestParam("checkOut") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
+            @RequestParam(value = "excludeBookingId", required = false) Long excludeBookingId
     ) {
         if (!checkOut.isAfter(checkIn)) {
             throw new IllegalArgumentException("Check-out must be after check-in");
         }
 
-        return roomRepository.findAvailableRooms(checkIn, checkOut);
+        return roomRepository.findAvailableRooms(checkIn, checkOut, excludeBookingId);
     }
 
     @PostMapping
