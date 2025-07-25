@@ -17,7 +17,6 @@ public class CustomerController {
     private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // ✅ Costruttore aggiornato con PasswordEncoder
     public CustomerController(CustomerRepository customerRepository, PasswordEncoder passwordEncoder) {
         this.customerRepository = customerRepository;
         this.passwordEncoder = passwordEncoder;
@@ -31,10 +30,13 @@ public class CustomerController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Customer> createCustomer(@RequestBody Customer customer) {
+    public ResponseEntity<?> createCustomer(@RequestBody Customer customer) {
+        if (customerRepository.findByEmail(customer.getEmail()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Email già registrata.");
+        }
 
         customer.setPassword(passwordEncoder.encode(customer.getPassword()));
-
 
         if (customer.getRole() == null) {
             customer.setRole("USER");
@@ -46,9 +48,20 @@ public class CustomerController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Customer updated) {
+    public ResponseEntity<?> updateCustomer(@PathVariable Long id, @RequestBody Customer updated) {
         return customerRepository.findById(id)
                 .map(customer -> {
+                    if (!customer.getEmail().equals(updated.getEmail())) {
+                        boolean emailInUse = customerRepository.findByEmail(updated.getEmail())
+                                .map(found -> !found.getId().equals(id))
+                                .orElse(false);
+
+                        if (emailInUse) {
+                            return ResponseEntity.status(HttpStatus.CONFLICT)
+                                    .body("Email già utilizzata da un altro utente.");
+                        }
+                    }
+
                     customer.setName(updated.getName());
                     customer.setEmail(updated.getEmail());
                     customer.setPhone(updated.getPhone());
@@ -57,6 +70,7 @@ public class CustomerController {
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -73,12 +87,25 @@ public class CustomerController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+
     @GetMapping("/email/{email}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public ResponseEntity<Customer> getByEmail(@PathVariable String email) {
-        return customerRepository.findByEmail(email)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Void> checkEmailExists(@PathVariable String email) {
+        boolean exists = customerRepository.findByEmail(email).isPresent();
+        return exists ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 
+
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@RequestBody Customer customer) {
+        if (customerRepository.findByEmail(customer.getEmail()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Email già registrata.");
+        }
+
+        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
+        customer.setRole("USER");
+
+        Customer saved = customerRepository.save(customer);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
 }

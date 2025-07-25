@@ -26,7 +26,7 @@ export default function ClientsTable({ clients = [], onEdit, onDelete }) {
                 className="me-2"
                 onClick={() => onEdit(client)}
               >
-                Modifica
+                <i className="bi bi-pencil"></i>
               </Button>
               {client.role !== "ADMIN" && (
                 <Button
@@ -34,7 +34,7 @@ export default function ClientsTable({ clients = [], onEdit, onDelete }) {
                   size="sm"
                   onClick={() => onDelete(client)}
                 >
-                  Elimina
+                  <i className="bi bi-trash"></i>
                 </Button>
               )}
             </td>

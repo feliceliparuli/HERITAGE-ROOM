@@ -16,7 +16,7 @@ export default function ClientDelete({ show, onHide, client, onConfirm }) {
           Annulla
         </Button>
         <Button variant="danger" onClick={() => onConfirm(client)}>
-          Elimina
+          <i className="bi bi-trash"></i>
         </Button>
       </Modal.Footer>
     </Modal>

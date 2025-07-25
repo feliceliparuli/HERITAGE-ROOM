@@ -16,7 +16,7 @@ export default function RoomDelete({ show, onHide, room, onConfirm }) {
           Annulla
         </Button>
         <Button variant="danger" onClick={() => onConfirm(room)}>
-          Elimina
+          <i className="bi bi-trash"></i>
         </Button>
       </Modal.Footer>
     </Modal>

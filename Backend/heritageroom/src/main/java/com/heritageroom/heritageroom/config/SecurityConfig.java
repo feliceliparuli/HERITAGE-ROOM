@@ -40,10 +40,12 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/customers/email/**").permitAll()
+                        .requestMatchers("/api/customers/register").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(httpBasic -> httpBasic
-                        .authenticationEntryPoint(noPopupAuthEntryPoint) // ← 🔒 niente popup!
+                        .authenticationEntryPoint(noPopupAuthEntryPoint)
                 )
                 .build();
     }

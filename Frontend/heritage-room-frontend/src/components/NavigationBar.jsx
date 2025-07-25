@@ -23,7 +23,6 @@ export default function NavigationBar() {
           <img
             src={logo}
             alt="Heritage Room Logo"
-            width="auto"
             height="50"
             className="d-inline-block align-top me-2"
           />
@@ -31,6 +30,25 @@ export default function NavigationBar() {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
+            <Nav.Link as={Link} to="/">
+              Home
+            </Nav.Link>
+            <Nav.Link as={Link} to="/contacts">
+              Contatti
+            </Nav.Link>
+
+            {!isAuthenticated && (
+              <Nav.Link as={Link} to="/login?from=prenota">
+                Prenota
+              </Nav.Link>
+            )}
+
+            {isAuthenticated && user.role === "USER" && (
+              <Nav.Link as={Link} to="/bookings">
+                My Bookings
+              </Nav.Link>
+            )}
+
             {isAuthenticated && user.role === "ADMIN" && (
               <>
                 <Nav.Link as={Link} to="/rooms">
@@ -43,11 +61,6 @@ export default function NavigationBar() {
                   Clients
                 </Nav.Link>
               </>
-            )}
-            {isAuthenticated && user.role === "USER" && (
-              <Nav.Link as={Link} to="/bookings">
-                My Bookings
-              </Nav.Link>
             )}
           </Nav>
 
@@ -71,17 +84,12 @@ export default function NavigationBar() {
                     {user.role === "ADMIN" && " (admin)"}
                   </span>
                 </Dropdown.Toggle>
-
                 <Dropdown.Menu>
                   <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
             ) : (
-              <Nav.Link
-                as={Link}
-                to="/login"
-                className="btn btn-outline-primary"
-              >
+              <Nav.Link as={Link} to="/login">
                 Login
               </Nav.Link>
             )}

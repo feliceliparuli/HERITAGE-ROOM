@@ -18,7 +18,7 @@ export default function BookingsDelete({ show, onHide, booking, onConfirm }) {
           Annulla
         </Button>
         <Button variant="danger" onClick={() => onConfirm(booking)}>
-          Elimina
+          <i className="bi bi-trash"></i>
         </Button>
       </Modal.Footer>
     </Modal>

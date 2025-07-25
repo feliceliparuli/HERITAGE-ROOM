@@ -6,7 +6,6 @@ export default function RoomsTable({ rooms = [], onEdit, onDelete }) {
       <thead>
         <tr>
           <th>Nome</th>
-          <th>Descrizione</th>
           <th>Prezzo per Notte</th>
           <th>Disponibile</th>
           <th>Azioni</th>
@@ -16,7 +15,6 @@ export default function RoomsTable({ rooms = [], onEdit, onDelete }) {
         {rooms.map((room) => (
           <tr key={room.id}>
             <td>{room.name}</td>
-            <td>{room.description}</td>
             <td>€{room.pricePerNight}</td>
             <td>{room.available ? "Sì" : "No"}</td>
             <td>
@@ -26,14 +24,14 @@ export default function RoomsTable({ rooms = [], onEdit, onDelete }) {
                 className="me-2"
                 onClick={() => onEdit(room)}
               >
-                Modifica
+                <i className="bi bi-pencil"></i>
               </Button>
               <Button
                 variant="outline-danger"
                 size="sm"
                 onClick={() => onDelete(room)}
               >
-                Elimina
+                <i className="bi bi-trash"></i>
               </Button>
             </td>
           </tr>

@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../store/userSlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isFromPrenota =
+    new URLSearchParams(location.search).get("from") === "prenota";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,7 +41,7 @@ function LoginForm() {
       dispatch(loginSuccess(userData));
       localStorage.setItem("auth", credentials);
       setError(null);
-      navigate("/");
+      navigate("/bookings");
     } catch (err) {
       console.error("Errore login:", err);
       setError(err.message || "Errore imprevisto.");
@@ -68,6 +73,13 @@ function LoginForm() {
           />
         </div>
         <button className="btn btn-primary">Accedi</button>
+
+        {isFromPrenota && (
+          <div className="mt-3">
+            <span>Non sei registrato? </span>
+            <Link to="/registrati">Crea un account</Link>
+          </div>
+        )}
       </form>
     </div>
   );

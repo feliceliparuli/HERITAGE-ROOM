@@ -10,7 +10,7 @@ export default function BookingsTable({ bookings = [], onEdit, onDelete }) {
           <th>Check-in</th>
           <th>Check-out</th>
           <th>Notti</th>
-          <th>Prezzo Totale</th>
+          <th>Totale</th>
           <th>Creata il</th>
           <th>Azioni</th>
         </tr>
@@ -47,14 +47,14 @@ export default function BookingsTable({ bookings = [], onEdit, onDelete }) {
                 className="me-2"
                 onClick={() => onEdit(b)}
               >
-                Modifica
+                <i className="bi bi-pencil"></i>
               </Button>
               <Button
                 variant="outline-danger"
                 size="sm"
                 onClick={() => onDelete(b)}
               >
-                Elimina
+                <i className="bi bi-trash"></i>
               </Button>
             </td>
           </tr>

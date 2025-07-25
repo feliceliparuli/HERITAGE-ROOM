@@ -1,16 +1,15 @@
 package com.heritageroom.heritageroom.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Entity
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Room {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,6 +20,5 @@ public class Room {
 
     private double pricePerNight;
 
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
-    private boolean available = true;
+    private boolean available;
 }

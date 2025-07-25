@@ -87,16 +87,6 @@ export default function RoomModal({ show, onHide, editingRoom, onSave }) {
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Descrizione</Form.Label>
-            <Form.Control
-              type="text"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
             <Form.Label>Prezzo per Notte</Form.Label>
             <Form.Control
               type="number"

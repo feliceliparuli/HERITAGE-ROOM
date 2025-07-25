@@ -13,7 +13,9 @@ import Rooms from "./pages/Rooms";
 import Bookings from "./pages/Bookings";
 import Clients from "./pages/Clients";
 import LoginForm from "./components/LoginForm";
-
+import Home from "./pages/Home";
+import Contatti from "./pages/Contatti";
+import Registrati from "./pages/Registrati";
 import { loadUserFromStorage } from "./store/userSlice";
 
 function App() {
@@ -42,8 +44,21 @@ function App() {
 
         <main className="container my-4 flex-grow-1">
           <Routes>
-            <Route path="/" element={<h2>Benvenuto in Heritage Room</h2>} />
+            {/* Pagine pubbliche */}
+            <Route path="/" element={<Home />} />
+            <Route path="/contacts" element={<Contatti />} />
+            <Route
+              path="/registrati"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/bookings" replace />
+                ) : (
+                  <Registrati />
+                )
+              }
+            />
 
+            {/* Pagine protette */}
             <Route
               path="/rooms"
               element={
@@ -69,7 +84,11 @@ function App() {
             <Route
               path="/bookings"
               element={
-                isAuthenticated ? <Bookings /> : <Navigate to="/" replace />
+                isAuthenticated ? (
+                  <Bookings />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
               }
             />
 

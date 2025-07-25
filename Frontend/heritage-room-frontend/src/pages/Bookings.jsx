@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import { Container, Row, Col, Button, Form } from "react-bootstrap";
 import BookingsTable from "../components/BookingsTable";
 import BookingsModal from "../components/BookingsModal";
 import BookingsDelete from "../components/BookingsDelete";
@@ -9,6 +9,7 @@ export default function Bookings() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [monthFilter, setMonthFilter] = useState(""); // formato "2025-07"
 
   const fetchBookings = () => {
     fetch("/api/bookings", {
@@ -57,6 +58,14 @@ export default function Bookings() {
       .catch((err) => console.error("Errore delete:", err));
   };
 
+  const filteredBookings = bookings.filter((b) => {
+    if (!monthFilter) return true;
+    const date = new Date(b.checkIn); // usa checkIn per filtro mese
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}` === monthFilter;
+  });
+
   return (
     <Container className="mt-4">
       <Row className="align-items-center mb-3">
@@ -68,8 +77,27 @@ export default function Bookings() {
         </Col>
       </Row>
 
+      <Row className="mb-3">
+        <Col md={4}>
+          <Form.Label>Filtra per mese (check-in):</Form.Label>
+          <Form.Control
+            type="month"
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+          />
+        </Col>
+        <Col md="auto" className="d-flex align-items-end">
+          <Button
+            variant="outline-secondary"
+            onClick={() => setMonthFilter("")}
+          >
+            Mostra tutte
+          </Button>
+        </Col>
+      </Row>
+
       <BookingsTable
-        bookings={bookings}
+        bookings={filteredBookings}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />

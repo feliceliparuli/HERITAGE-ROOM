@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,7 +30,7 @@ public class GlobalExceptionHandler {
                 "Ci sono errori di validazione.",
                 errors
         );
-        apiError.setTimestamp(LocalDateTime.now());
+
         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
 
@@ -42,7 +41,7 @@ public class GlobalExceptionHandler {
                 "Bad Request",
                 ex.getMessage()
         );
-        apiError.setTimestamp(LocalDateTime.now());
+
         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
 
@@ -53,7 +52,7 @@ public class GlobalExceptionHandler {
                 "Forbidden",
                 ex.getMessage()
         );
-        apiError.setTimestamp(LocalDateTime.now());
+
         return new ResponseEntity<>(apiError, HttpStatus.FORBIDDEN);
     }
 
@@ -64,19 +63,20 @@ public class GlobalExceptionHandler {
                 "Method Not Allowed",
                 ex.getMessage()
         );
-        apiError.setTimestamp(LocalDateTime.now());
+
         return new ResponseEntity<>(apiError, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGenericException(Exception ex) {
-        ex.printStackTrace(); // utile in console
+        ex.printStackTrace(); // utile per debug a console
+
         ApiError apiError = new ApiError(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
                 "Si è verificato un errore inatteso: " + ex.getMessage()
         );
-        apiError.setTimestamp(LocalDateTime.now());
+
         return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
