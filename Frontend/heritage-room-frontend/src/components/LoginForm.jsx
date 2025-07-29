@@ -15,37 +15,39 @@ function LoginForm() {
   const isFromPrenota =
     new URLSearchParams(location.search).get("from") === "prenota";
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
+    setError(null);
+
     const credentials = btoa(`${email}:${password}`);
     const authHeader = `Basic ${credentials}`;
 
-    try {
-      const res = await fetch("/api/auth/me", {
-        method: "GET",
-        headers: {
-          Authorization: authHeader,
-        },
-        credentials: "include",
+    fetch("/api/auth/me", {
+      method: "GET",
+      headers: { Authorization: authHeader },
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Login fallito. Verifica email e password.");
+        }
+        return res.json();
+      })
+      .then((userData) => {
+        if (!userData.email || !userData.role) {
+          throw new Error("Risposta non valida dal server.");
+        }
+
+        dispatch(loginSuccess(userData));
+        localStorage.setItem("auth", credentials);
+
+        //  Se arrivi da Prenota vai su /bookings, altrimenti su /
+        navigate(isFromPrenota ? "/bookings" : "/", { replace: true });
+      })
+      .catch((err) => {
+        console.error("Errore login:", err);
+        setError(err.message || "Errore imprevisto.");
       });
-
-      if (!res.ok) {
-        throw new Error("Login fallito. Verifica email e password.");
-      }
-
-      const userData = await res.json();
-      if (!userData.email || !userData.role) {
-        throw new Error("Risposta non valida dal server.");
-      }
-
-      dispatch(loginSuccess(userData));
-      localStorage.setItem("auth", credentials);
-      setError(null);
-      navigate("/bookings");
-    } catch (err) {
-      console.error("Errore login:", err);
-      setError(err.message || "Errore imprevisto.");
-    }
   };
 
   return (
@@ -74,10 +76,11 @@ function LoginForm() {
         </div>
         <button className="btn btn-primary">Accedi</button>
 
+        {/* Link per creare account */}
         {isFromPrenota && (
           <div className="mt-3">
             <span>Non sei registrato? </span>
-            <Link to="/registrati">Crea un account</Link>
+            <Link to="/registrati?from=prenota">Crea un account</Link>
           </div>
         )}
       </form>

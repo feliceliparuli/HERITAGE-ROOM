@@ -97,16 +97,6 @@ export default function RoomModal({ show, onHide, editingRoom, onSave }) {
             />
           </Form.Group>
 
-          <Form.Group className="mb-3">
-            <Form.Check
-              type="checkbox"
-              label="Disponibile"
-              name="available"
-              checked={formData.available}
-              onChange={handleChange}
-            />
-          </Form.Group>
-
           <Button type="submit" variant="primary">
             Salva
           </Button>

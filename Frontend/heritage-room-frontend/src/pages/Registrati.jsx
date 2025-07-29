@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../store/userSlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 function Registrati() {
   const [form, setForm] = useState({
@@ -14,6 +14,11 @@ function Registrati() {
   const [error, setError] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Verifica se arrivi da Prenota
+  const isFromPrenota =
+    new URLSearchParams(location.search).get("from") === "prenota";
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -26,13 +31,14 @@ function Registrati() {
     const { name, email, phone, password } = form;
     const authHeader = "Basic " + btoa(`${email}:${password}`);
 
-    // Controllo veloce lato client
+    // Controllo veloce lato client se esiste già l'email
     fetch(`/api/customers/email/${email}`)
       .then((checkRes) => {
         if (checkRes.ok) {
           throw new Error("Questa email è già registrata.");
         }
 
+        // Procedi con la registrazione
         return fetch("/api/customers/register", {
           method: "POST",
           headers: {
@@ -49,10 +55,9 @@ function Registrati() {
           throw new Error("Registrazione fallita.");
         }
 
+        // Dopo registrazione, login automatico
         return fetch("/api/auth/me", {
-          headers: {
-            Authorization: authHeader,
-          },
+          headers: { Authorization: authHeader },
           credentials: "include",
         });
       })
@@ -65,7 +70,9 @@ function Registrati() {
       .then((user) => {
         dispatch(loginSuccess(user));
         localStorage.setItem("auth", btoa(`${email}:${password}`));
-        navigate("/bookings");
+
+        //  Se arrivi da Prenota vai su /bookings, altrimenti su /
+        navigate(isFromPrenota ? "/bookings" : "/", { replace: true });
       })
       .catch((err) => {
         setError(err.message || "Errore durante la registrazione.");

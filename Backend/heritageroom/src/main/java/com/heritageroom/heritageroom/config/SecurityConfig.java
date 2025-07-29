@@ -39,12 +39,17 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/customers/email/**").permitAll()
-                        .requestMatchers("/api/customers/register").permitAll()
+                        // ✅ Endpoints pubblici
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/customers/register",
+                                "/api/customers/email/**"
+                        ).permitAll()
+                        // Tutto il resto richiede autenticazione
                         .anyRequest().authenticated()
                 )
                 .httpBasic(httpBasic -> httpBasic
+                        // evita il popup del browser
                         .authenticationEntryPoint(noPopupAuthEntryPoint)
                 )
                 .build();

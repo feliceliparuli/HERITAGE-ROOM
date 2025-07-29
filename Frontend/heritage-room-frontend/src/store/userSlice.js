@@ -23,9 +23,9 @@ export const loadUserFromStorage = createAsyncThunk(
       })
       .then((data) => ({
         email: data.email,
-        role: data.role.replace("ROLE_", ""),
+        role: data.role,
         id: data.id,
-        name: data.name, // ✅ aggiunto
+        name: data.name,
       }))
       .catch((err) => thunkAPI.rejectWithValue(err.message));
   }
@@ -44,7 +44,7 @@ const userSlice = createSlice({
     loginSuccess: (state, action) => {
       const { email, role, id, name } = action.payload;
       state.email = email;
-      state.role = role.replace("ROLE_", "");
+      state.role = role;
       state.id = id;
       state.name = name;
       state.status = "succeeded";

@@ -85,7 +85,10 @@ export default function NavigationBar() {
                   </span>
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
-                  <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
+                  <Dropdown.Item onClick={handleLogout}>
+                    {" "}
+                    <i className="bi bi-box-arrow-right me-2"></i>Logout
+                  </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
             ) : (

@@ -7,7 +7,6 @@ export default function RoomsTable({ rooms = [], onEdit, onDelete }) {
         <tr>
           <th>Nome</th>
           <th>Prezzo per Notte</th>
-          <th>Disponibile</th>
           <th>Azioni</th>
         </tr>
       </thead>
@@ -16,7 +15,6 @@ export default function RoomsTable({ rooms = [], onEdit, onDelete }) {
           <tr key={room.id}>
             <td>{room.name}</td>
             <td>€{room.pricePerNight}</td>
-            <td>{room.available ? "Sì" : "No"}</td>
             <td>
               <Button
                 variant="outline-secondary"

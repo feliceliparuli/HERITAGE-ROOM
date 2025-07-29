@@ -68,7 +68,11 @@ export default function Clients() {
         setShowDeleteModal(false);
         setClientToDelete(null);
       })
-      .catch(() => setError("Impossibile eliminare il cliente."));
+      .catch(() =>
+        setError(
+          "Impossibile eliminare il cliente, esiste una prenotazione a nome suo!"
+        )
+      );
   };
 
   return (

@@ -9,7 +9,7 @@ export default function Bookings() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [monthFilter, setMonthFilter] = useState(""); // formato "2025-07"
+  const [monthFilter, setMonthFilter] = useState("");
 
   const fetchBookings = () => {
     fetch("/api/bookings", {
@@ -60,7 +60,7 @@ export default function Bookings() {
 
   const filteredBookings = bookings.filter((b) => {
     if (!monthFilter) return true;
-    const date = new Date(b.checkIn); // usa checkIn per filtro mese
+    const date = new Date(b.checkIn);
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
     return `${y}-${m}` === monthFilter;

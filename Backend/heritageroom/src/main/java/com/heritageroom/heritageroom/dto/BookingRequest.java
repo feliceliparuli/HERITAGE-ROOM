@@ -1,24 +1,26 @@
 package com.heritageroom.heritageroom.dto;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDate;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Setter
+@Getter
 public class BookingRequest {
-    @NotNull
-    private Long roomId;
 
-    @NotNull
-    private Long customerId;
-
+    // GETTERS & SETTERS
     @NotNull
     private LocalDate checkIn;
 
     @NotNull
     private LocalDate checkOut;
+
+    @NotNull
+    private Long customerId;
+
+    @NotNull
+    private Long roomId;
+
 }
